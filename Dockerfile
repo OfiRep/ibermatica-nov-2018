@@ -7,4 +7,4 @@ RUN apt-get install nginx -y
 
 ENTRYPOINT ["nginx","-g","daemon off;"]
 
-CMD ["-h"]
+WORKDIR /etc
