@@ -72,6 +72,18 @@ services:
       - ibermatica_app1
       - ibermatica_app2
 
+  ibermatica_cadvisor:
+    image: google/cadvisor:latest
+    container_name: ibermatica_cadvisor
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+      - /dev/disk/:/dev/disk:ro
+    ports:
+      - "8080:8080"
+
 networks:
   ibermatica_network_1:
     name: ibermatica_network_1
