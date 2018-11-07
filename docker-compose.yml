@@ -1,0 +1,90 @@
+version: '3.7'
+
+services:
+  #Ejemplo de proxy inverso con Nginx
+  #ibermatica_nginx_reverse_proxy:
+  #  build:
+  #    context: ./nginx_reverse_proxy
+  #  image: localhost:8444/ibermatica/nginxreverseproxy
+  #  ports:
+  #    - "80:80"
+
+  ibermatica_app1:
+    image: nginx:1.13.9-alpine
+    container_name: ibermatica_app1
+    networks:
+      ibermatica_network_2:
+    extra_hosts:
+      - "search-engine:8.8.8.8"
+    environment:
+      - DATABASE_IP=192.654.98.1
+    labels:
+      - "traefik.enable=true"
+      - "traefik.port=80"
+      - "traefik.docker.network=ibermatica_network_2"
+      - "traefik.domain=ibermatica.com"
+      - "traefik.backend=ibermatica_app1"
+      - "traefik.frontend.rule=PathPrefixStrip: /app1"
+      - "traefik.frontend.redirect.regex=^(.*)/app1$$"
+      - "traefik.redirect.replacement=$$1/app1/"
+      - "traefik.frontend.rule=PathPrefix:/app1;ReplacePathRegex: ^/app1/(.*) /$$1"
+      - "traefik.frontend.auth.basic.users=tomy:$$apr1$$cD9Hc4pK$$yOS/6SWxynuRsOnAUubba/"
+    restart: always
+
+  ibermatica_app2:
+    image: nginx:1.13.9-alpine
+    container_name: ibermatica_app2
+    networks:
+      ibermatica_network_1:
+    restart: always
+
+  ibermatica_traefik_reverse_proxy:
+    image: traefik:1.7.2
+    networks:
+      ibermatica_network_1:
+        ipv4_address: 170.15.235.100
+      ibermatica_network_2:
+    command:
+      - "--api=true"
+      - "--api.entrypoint=traefik"
+      - "--api.dashboard=true"
+      - "--defaultentrypoints=http"
+      - "--ping"
+      - "--docker"
+      - "--docker.watch"
+      - "--docker.exposedbydefault=false"
+      - "--docker.domain=ibermatica.com"
+      - "--logLevel=DEBUG"
+    ports:
+      - "80:80"
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.port=8080"
+      - "traefik.domain=ibermatica.com"
+      - "traefik.backend=ibermatica_traefik_reverse_proxy"
+      - "traefik.frontend.rule=PathPrefixStrip: /traefik"
+      - "traefik.frontend.redirect.regex=^(.*)/traefik$$"
+      - "traefik.redirect.replacement=$$1/traefik/"
+      - "traefik.frontend.rule=PathPrefix:/traefik,/dashboard,/health,/providers,/api;ReplacePathRegex: ^/traefik/(.*) /$$1"
+    depends_on:
+      - ibermatica_app1
+      - ibermatica_app2
+
+networks:
+  ibermatica_network_1:
+    name: ibermatica_network_1
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+      - subnet: 170.15.235.0/24
+  
+  ibermatica_network_2:
+    name: ibermatica_network_2
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+      - subnet: 175.16.239.0/24
