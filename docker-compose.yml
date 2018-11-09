@@ -84,6 +84,20 @@ services:
     ports:
       - "8080:8080"
 
+  ibermatica_portainer:
+    image: portainer/portainer
+    container_name: ibermatica_portainer
+    volumes:
+      - portainer_data:/data
+      - /var/run/docker.sock:/var/run/docker.sock
+    ports:
+      - "8081:9000"
+
+volumes:
+  portainer_data:
+    external: true
+    name: portainer_data
+
 networks:
   ibermatica_network_1:
     name: ibermatica_network_1
